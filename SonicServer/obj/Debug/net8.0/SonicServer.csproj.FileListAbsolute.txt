@@ -1,0 +1,14 @@
+/home/un/RiderProjects/SonicServer/SonicServer/bin/Debug/net8.0/SonicServer
+/home/un/RiderProjects/SonicServer/SonicServer/bin/Debug/net8.0/SonicServer.deps.json
+/home/un/RiderProjects/SonicServer/SonicServer/bin/Debug/net8.0/SonicServer.runtimeconfig.json
+/home/un/RiderProjects/SonicServer/SonicServer/bin/Debug/net8.0/SonicServer.dll
+/home/un/RiderProjects/SonicServer/SonicServer/bin/Debug/net8.0/SonicServer.pdb
+/home/un/RiderProjects/SonicServer/SonicServer/obj/Debug/net8.0/SonicServer.GeneratedMSBuildEditorConfig.editorconfig
+/home/un/RiderProjects/SonicServer/SonicServer/obj/Debug/net8.0/SonicServer.AssemblyInfoInputs.cache
+/home/un/RiderProjects/SonicServer/SonicServer/obj/Debug/net8.0/SonicServer.AssemblyInfo.cs
+/home/un/RiderProjects/SonicServer/SonicServer/obj/Debug/net8.0/SonicServer.csproj.CoreCompileInputs.cache
+/home/un/RiderProjects/SonicServer/SonicServer/obj/Debug/net8.0/SonicServer.dll
+/home/un/RiderProjects/SonicServer/SonicServer/obj/Debug/net8.0/refint/SonicServer.dll
+/home/un/RiderProjects/SonicServer/SonicServer/obj/Debug/net8.0/SonicServer.pdb
+/home/un/RiderProjects/SonicServer/SonicServer/obj/Debug/net8.0/SonicServer.genruntimeconfig.cache
+/home/un/RiderProjects/SonicServer/SonicServer/obj/Debug/net8.0/ref/SonicServer.dll
