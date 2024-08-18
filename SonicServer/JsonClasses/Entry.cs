@@ -7,5 +7,7 @@
 		public string Category { get; set; }
 		public string Price { get; set; }
 		public int Quantity { get; set; }
+		public string ImagePath { get; set; }
+		public List<ModifierList> ModifierList { get; set; }
 	}
 }

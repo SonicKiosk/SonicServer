@@ -49,7 +49,13 @@ namespace SonicServer
 										MktgDescription = "COCK",
 										Category = "COCK",
 										Price = "69",
-										Quantity = 69
+										Quantity = 69,
+										ImagePath = "media/shoot.png",
+										ModifierList = new List<ModifierList>{ new()
+										{
+											ModifierId = "morecock",
+											MktgDescription = "more cock"
+										}}
 									}
 								}
 							}
@@ -57,6 +63,14 @@ namespace SonicServer
 					}
 				}
 			};
+			// for (int i = 0; i < 100; i++)
+			// {
+			// 	retailEventRequest.PayloadRetail.Ticket.SubTicketList[0].EntryList[0].ModifierList.Add(new()
+			// 	{
+			// 		ModifierId = "morecock",
+			// 		MktgDescription = "more cock"
+			// 	});
+			// }
 			ClientHandler.RetailEvent(
 				_clientHandler.Stream,
 				retailEventRequest.Verb,
