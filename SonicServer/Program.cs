@@ -1,14 +1,17 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 namespace SonicServer
 {
 
 
     class Program
     {
+        private static StringBuilder _stringBuilder = new(); // incase we need it
+        private static bool _ifIncomplete = false;
+        private static int _expectedContentLength = 0;
         static void Main(string[] args)
         {
             StartServer();
@@ -21,6 +24,8 @@ namespace SonicServer
 
             // Create a TCP listener
             TcpListener server = new TcpListener(IPAddress.Parse(host), port);
+
+             
 
             // Start listening for incoming connections
             server.Start();
@@ -46,23 +51,38 @@ namespace SonicServer
             {
                 // Process the received data
                 string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                Console.WriteLine($"Received: {message}");
+                
                 
                 string? response = message switch
                 {
-                    { } msg when msg.Contains("CMD hi") => "524553502068690d0a0d0a", // RESP hi
+                    { } msg when msg.Contains("CMD hi") => "RESP hi\r\n\r\n", // RESP hi
                     { } msg when msg.Contains("CMD capabilities") =>
-                        "52455350206361706162696c69746965730d0a436f6e74656e742d4c656e6774683a20320d0a436f6e74656e742d547970653a20746578742f6a736f6e0d0a0d0a7b7d0a", // RESP capabilities
+                        "RESP capabilities\r\nContent-Length: 2\r\nContent-Type: text/json\r\n\r\n{}\n", // RESP capabilities
                     { } msg when msg.Contains("\"For\":\"devicetype\"") =>
-                        "44415441200d0a436f6e74656e742d4c656e6774683a2034370d0a436f6e74656e742d547970653a20746578742f6a736f6e0d0a0d0a7b22466f72223a2264657669636574797065222c225061796c6f6164223a22222c2254797065223a2252455350227d", // RESP devicetype
+                        "DATA \r\nContent-Length: 47\r\nContent-Type: text/json\r\n\r\n{\"For\":\"devicetype\",\"Payload\":\"\",\"Type\":\"RESP\"}", // RESP devicetype
                     { } msg when msg.Contains("\"For\":\"stalllogin\"") =>
-                        "44415441200d0a436f6e74656e742d4c656e6774683a2034370d0a436f6e74656e742d547970653a20746578742f6a736f6e0d0a0d0a7b22466f72223a227374616C6C6C6F67696E222c225061796c6f6164223a22222c2254797065223a2252455350227d", // RESP stalllogin
+                        "DATA \r\nContent-Length: 47\r\nContent-Type: text/json\r\n\r\n{\"For\":\"stalllogin\",\"Payload\":\"\",\"Type\":\"RESP\"}", // RESP stalllogin
                     _ => null
                 };
-
+                // just assume in this situation that the data is now json so 
+                if (response == null)
+                {
+                    try
+                    {
+                        Console.WriteLine($"received payload: {GetJson(message).ReceivedPayload}");
+                    }
+                    catch (Exception e)
+                    {
+                        if (e.ToString().Contains("Incomplete JSON payload"))
+                        {
+                            Console.WriteLine("Payload is not ready yet!");
+                        }
+                    }
+                    
+                }
                 if (response != null)
                 {
-                    byte[] responseBytes = StringToByteArray(response);
+                    byte[] responseBytes = Encoding.UTF8.GetBytes(response);
                     stream.Write(responseBytes, 0, responseBytes.Length);
                     Console.WriteLine($"Sent: {Encoding.UTF8.GetString(responseBytes)}");
                 }
@@ -72,16 +92,68 @@ namespace SonicServer
             client.Close();
         }
 
-        static byte[] StringToByteArray(string? hex)
+        public static InitalData GetJson(string data)
         {
-            int numberChars = hex!.Length;
-            byte[] bytes = new byte[numberChars / 2];
-            for (int i = 0; i < numberChars; i += 2)
+            int actualLength;
+            string payload;
+            Console.WriteLine(data);
+
+            if (!_ifIncomplete)
             {
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+                var contentLengthMatch = Regex.Match(data, @"Content-Length: (\d+)");
+                if (!contentLengthMatch.Success)
+                {
+                    Console.WriteLine("Content-Length not found.");
+                    throw new Exception("Content-Length not found.");
+                }
+
+                _expectedContentLength = int.Parse(contentLengthMatch.Groups[1].Value);
+
+                // Extract JSON payload
+                var jsonPayloadMatch = Regex.Match(data, @"\r?\n\r?\n(.*)", RegexOptions.Singleline);
+                if (!jsonPayloadMatch.Success)
+                {
+                    Console.WriteLine("JSON payload not found.");
+                    throw new Exception("JSON payload not found.");
+                }
+
+                payload = jsonPayloadMatch.Groups[1].Value;
+                actualLength = payload.Length;
+            }
+            else
+            {
+                actualLength = data.Length;
+                payload = data;
             }
 
-            return bytes;
+            // Combine in this situation
+            _stringBuilder.Append(payload);
+            Console.WriteLine(_stringBuilder.Length);
+            Console.WriteLine(_expectedContentLength);
+            // *hopefully* we never get to state where this runs away
+            if (_stringBuilder.Length == _expectedContentLength)
+            {
+                Console.WriteLine("its right!");
+                payload = _stringBuilder.ToString();
+                var outPayload = JsonConvert.DeserializeObject<InitalData>(payload);
+                _stringBuilder.Clear();
+                _ifIncomplete = false;
+                _expectedContentLength = 0;
+                Console.WriteLine(_expectedContentLength);
+                return outPayload;
+            }
+
+            _ifIncomplete = true;
+            throw new Exception("Incomplete JSON payload");
         }
+
+
+    }
+
+    class InitalData
+    {
+        [JsonProperty("For")] public string ReceivedFor { get; set; } = null!;
+        [JsonProperty("Payload")] public string ReceivedPayload { get; set; } = null!;
+        [JsonProperty("Type")] public string ReceivedType { get; set; } = null!;
     }
 }
