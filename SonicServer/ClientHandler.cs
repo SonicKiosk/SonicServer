@@ -128,7 +128,7 @@ namespace SonicServer
 		}
 		public static void Send(NetworkStream conn, string? method, string? path, Dictionary<string, string>? headers, string? body)
 		{
-			string payload = $"{method?.Trim() ?? ""} {path?.Trim() ?? ""}\r\n".Trim();
+			string payload = $"{method ?? ""} {path ?? ""}\r\n".Trim();
 			if (headers != null)
 			{
 				foreach (var header in headers)

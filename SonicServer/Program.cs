@@ -91,13 +91,9 @@ namespace SonicServer
 				(x) => x.AddressFamily == AddressFamily.InterNetwork
 			);
 
-			string host = "192.168.1.109"; // localhost
-			if (address != null)
-			{
-				host = address.ToString();
-			}
+			string host = address.ToString(); //"192.168.1.109"; // localhost
+			//! address = "192.168.1.109"
 			int port = 8005; // choose any available port
-
 			// Create a TCP listener
 			TcpListener server = new(IPAddress.Parse(host), port);
 
