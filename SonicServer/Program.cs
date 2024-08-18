@@ -47,6 +47,7 @@ namespace SonicServer
 									new() {
 										ItemId = "COCK",
 										MktgDescription = "COCK",
+										SpanishDescription = "not cock",
 										Category = "COCK",
 										Price = "69",
 										Quantity = 69
