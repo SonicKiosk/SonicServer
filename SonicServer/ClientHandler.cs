@@ -1,5 +1,8 @@
 using Newtonsoft.Json;
+using Pastel;
 using SonicServer.JsonClasses;
+using System.Drawing;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -7,21 +10,41 @@ namespace SonicServer
 {
 	public class ClientHandler
 	{
+		Logger ClientLogger = null;
 		private const int ClientBufferSize = 1024;
-		private readonly NetworkStream _stream;
+		private NetworkStream _stream;
+		private readonly TcpClient client;
 		private bool _isHandShakeDone = false;
+		public Guid id { get; private set; } = Guid.Empty;
 		private Dictionary<string, object[]> _existingItems;
 
 		public ClientHandler(TcpClient client)
 		{
-			_stream = client.GetStream();
-			HandleClient();
-		}
-		public NetworkStream Stream => _stream;
+			this.client = client;
+			this.id = Guid.NewGuid();
+            //{((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString().Pastel(Color.MediumAquamarine)}
+            ClientLogger = new Logger($"Client {id.ToString().Pastel(Color.MediumAquamarine)}", Color.Chartreuse);
 
-		public void HandleClient()
+			//ClientLogger.Info("herro");
+			new Thread(() =>
+            {
+                _stream = client.GetStream();
+                ClientLogger.Info("Initialized ClientHandler.");
+                HandleClient();
+            }).Start();
+
+            new Thread(CheckForDisconnect).Start();
+        }
+		public NetworkStream Stream => _stream;
+		public void CheckForDisconnect()
 		{
-			byte[] buffer = new byte[ClientBufferSize];
+			while (client.Connected && client.Client.Connected)
+				continue;
+			ClientLogger.Info("Disconnecting.");
+		}
+		public void HandleClient()
+        {
+            byte[] buffer = new byte[ClientBufferSize];
 			int bytesRead;
 			StringBuilder messageBuilder = new();
 			int contentLength = -1;
@@ -57,8 +80,9 @@ namespace SonicServer
 					if (contentLength != -1 && messageBuilder.Length >= contentLength)
 					{
 						string completeMessage = messageBuilder.ToString(0, contentLength);
-						Console.ForegroundColor = ConsoleColor.DarkRed;
-						Console.WriteLine($"RECEIVED: {completeMessage}");
+						//Console.ForegroundColor = ConsoleColor.DarkRed;
+						//ClientLogger.Info("Received message.");
+						//ClientLogger.Debug($"Recieved Message: {completeMessage.Pastel(Color.DarkRed)}");
 						JsonData info = JsonConvert.DeserializeObject<JsonData>(completeMessage)!;
 						JsonData info2 =
 							JsonConvert.DeserializeObject<JsonData>(
@@ -66,9 +90,9 @@ namespace SonicServer
 									Convert.FromBase64String(info.Payload)
 								)
 							)!;
-						Console.ForegroundColor = ConsoleColor.Green;
-						Console.WriteLine(Encoding.UTF8.GetString(Convert.FromBase64String(info2.Payload)));
-						Console.ResetColor();
+						//Console.ForegroundColor = ConsoleColor.Green;
+                        //ClientLogger.Debug("Payload:",Encoding.UTF8.GetString(Convert.FromBase64String(info2.Payload)).Pastel(Color.DarkSalmon));
+						//Console.ResetColor();
 						// Clear the message builder for the next message
 						messageBuilder.Clear();
 						contentLength = -1;
@@ -97,7 +121,7 @@ namespace SonicServer
 			switch (message)
 			{
 				case { } msg when msg.Contains("CMD hi"):
-					Console.WriteLine("we have handshake p1 sending hi back");
+                    ClientLogger.Info("Responding hi ");
 					Send(stream, "RESP", "hi", null, null);
 					break;
 				case { } msg when msg.Contains("CMD capabilities"):
