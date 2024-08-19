@@ -9,11 +9,13 @@ namespace SonicServer
 	{
 		private const int ClientBufferSize = 1024;
 		private readonly NetworkStream _stream;
-		private static bool _isHandShakeDone = false;
+		private bool _isHandShakeDone = false;
+		private Dictionary<string, object[]> _existingItems;
 
 		public ClientHandler(TcpClient client)
 		{
 			_stream = client.GetStream();
+			HandleClient();
 		}
 		public NetworkStream Stream => _stream;
 
@@ -89,7 +91,7 @@ namespace SonicServer
 			}
 			return -1; // Return -1 if Content-Length header is not found
 		}
-		private static void HandShake(string message, NetworkStream stream)
+		private void HandShake(string message, NetworkStream stream)
 		{
 			JsonData response;
 			switch (message)
@@ -126,7 +128,7 @@ namespace SonicServer
 					break;
 			}
 		}
-		public static void Send(NetworkStream conn, string? method, string? path, Dictionary<string, string>? headers, string? body)
+		public  void Send(NetworkStream conn, string? method, string? path, Dictionary<string, string>? headers, string? body)
 		{
 			string payload = $"{method?.Trim() ?? ""} {path?.Trim() ?? ""}\r\n";
 			if (headers != null)
@@ -147,7 +149,7 @@ namespace SonicServer
 			conn.Write(buffer, 0, buffer.Length);
 		}
 
-		public static void SendJson(NetworkStream conn, string method, string? path, object? obj)
+		public  void SendJson(NetworkStream conn, string method, string? path, object? obj)
 		{
 			Dictionary<string, string> headers = new() {
 				{ "Content-Type", "text/json" }
@@ -156,13 +158,13 @@ namespace SonicServer
 			headers["Content-Length"] = Encoding.UTF8.GetByteCount(body).ToString();
 			Send(conn, method, path, headers, body);
 		}
-		public static string B64Json(object data)
+		public  string B64Json(object data)
 		{
 			string jsonString = JsonConvert.SerializeObject(data);
 			byte[] bytes = Encoding.UTF8.GetBytes(jsonString);
 			return Convert.ToBase64String(bytes);
 		}
-		public static void RetailEvent(NetworkStream conn, string verb, string resource, dynamic body)
+		public  void RetailEvent(NetworkStream conn, string verb, string resource, dynamic body)
 		{
 			JsonData payload = new()
 			{
@@ -184,6 +186,63 @@ namespace SonicServer
 				})
 			};
 			SendJson(conn, "DATA", "", payload);
+		}
+
+		public void AddItem(string itemId, string desc, string category, string price, int quantity,string imagePath)
+		{
+			int total;
+			if (_existingItems.TryGetValue(itemId, out var item))
+			{
+				// c# this is dumb as shit please fix it rn thx xx
+				item[4] = (int)item[4] + 1;
+
+
+			}
+			else
+			{
+					_existingItems.Add(itemId,
+						[desc, category, price, quantity, imagePath,]);
+			}
+			
+			
+			
+			var retailEventRequest = new RetailEventRequest
+			{
+				Type = "RQST",
+				For = "retail",
+				Verb = "POST",
+				Resource = "/retail/ticket",
+				PayloadRetail = new PayloadRetail
+				{
+					Ticket = new Ticket
+					{
+						State = "ACTIVE",
+						Total = "420.69",
+						Tax = "13.37",
+						EmployeeFirstName = "Silly",
+						EmployeeLastName = "Billy",
+						SubTicketList = new List<SubTicket>{
+							new() {
+								EntryList = new List<Entry>{
+									new() {
+										ItemId = "1002",
+										MktgDescription = "COCK",
+										Category = "COCK",
+										Price = "69",
+										Quantity = 69,
+										ImagePath = "../../../../../../../test.png",
+										ModifierList = new List<ModifierList>{ new()
+										{
+											ModifierId = "morecock",
+											MktgDescription = "more cock"
+										}}
+									}
+								}
+							}
+						}
+					}
+				}
+			};
 		}
 	}
 }
