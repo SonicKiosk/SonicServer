@@ -8,82 +8,94 @@ namespace SonicServer
 {
 	class Program
 	{
-		private static ClientHandler _clientHandler = null!;
-
+		public static List<ClientHandler> _activeConnections;
 		static void Main(string[] args)
 		{
-			Timer timer = new()
-			{
-				Interval = 20000,
-				Enabled = true
-			};
-			timer.Elapsed += TimerOnElapsed;
-			timer.Interval = 20000;
-			timer.Enabled = true;
+			// Timer timer = new()
+			// {
+			// 	Interval = 10000,
+			// 	Enabled = true
+			// };
+			// timer.Elapsed += TimerOnElapsed;
+			// timer.Interval = 20000;
+			// timer.Enabled = true;
 			StartServer();
 		}
 
-		private static void TimerOnElapsed(object? sender, ElapsedEventArgs e)
-		{
-			RetailEventRequest retailEventRequest;
-			retailEventRequest = new RetailEventRequest
-			{
-				Type = "RQST",
-				For = "retail",
-				Verb = "POST",
-				Resource = "/retail/ticket",
-				PayloadRetail = new PayloadRetail
-				{
-					Ticket = new Ticket
-					{
-						State = "ACTIVE",
-						Total = "420.69",
-						Tax = "13.37",
-						EmployeeFirstName = "Silly",
-						EmployeeLastName = "Billy",
-						SubTicketList = new List<SubTicket>{
-							new() {
-								EntryList = new List<Entry>{
-									new() {
-										ItemId = "COCK",
-										MktgDescription = "COCK",
-										SpanishDescription = "not cock",
-										Category = "COCK",
-										Price = "69",
-										Quantity = 69
-									}
-								}
-							}
-						}
-					}
-				}
-			};
-			ClientHandler.RetailEvent(
-				_clientHandler.Stream,
-				retailEventRequest.Verb,
-				retailEventRequest.Resource,
-				retailEventRequest.PayloadRetail
-			);
-			retailEventRequest = new RetailEventRequest
-			{
-				Verb = "CHECKIN",
-				Resource = "/customer",
-				PayloadRetail = new PayloadRetail()
-				{
-					Customer = new Customer
-					{
-						CustomerInfo = new CustomerInfo()
-						{
-							ID = "meow",
-							FirstName = "FUcking",
-							LastName = "Cocks",
-							ProfilePictureUrl = "https://jack.polancz.uk/th.jpg"
-						}
-					}
-				}
-			};
-			ClientHandler.RetailEvent(_clientHandler.Stream, retailEventRequest.Verb, retailEventRequest.Resource, retailEventRequest.PayloadRetail);
-		}
+		// private static void TimerOnElapsed(object? sender, ElapsedEventArgs e)
+		// {
+		// 	RetailEventRequest retailEventRequest;
+		// 	retailEventRequest = new RetailEventRequest
+		// 	{
+		// 		Type = "RQST",
+		// 		For = "retail",
+		// 		Verb = "POST",
+		// 		Resource = "/retail/ticket",
+		// 		PayloadRetail = new PayloadRetail
+		// 		{
+		// 			Ticket = new Ticket
+		// 			{
+		// 				State = "ACTIVE",
+		// 				Total = "420.69",
+		// 				Tax = "13.37",
+		// 				EmployeeFirstName = "Silly",
+		// 				EmployeeLastName = "Billy",
+		// 				SubTicketList = new List<SubTicket>{
+		// 					new() {
+		// 						EntryList = new List<Entry>{
+		// 							new() {
+		// 								ItemId = "1002",
+		// 								MktgDescription = "COCK",
+		// 								Category = "COCK",
+		// 								Price = "69",
+		// 								Quantity = 69,
+		// 								ImagePath = "../../../../../../../test.png",
+		// 								ModifierList = new List<ModifierList>{ new()
+		// 								{
+		// 									ModifierId = "morecock",
+		// 									MktgDescription = "more cock"
+		// 								}}
+		// 							}
+		// 						}
+		// 					}
+		// 				}
+		// 			}
+		// 		}
+		// 	};
+		// 	// for (int i = 0; i < 100; i++)
+		// 	// {
+		// 	// 	retailEventRequest.PayloadRetail.Ticket.SubTicketList[0].EntryList[0].ModifierList.Add(new()
+		// 	// 	{
+		// 	// 		ModifierId = "morecock",
+		// 	// 		MktgDescription = "more cock"
+		// 	// 	});
+		// 	// }
+		// 	ClientHandler.RetailEvent(
+		// 		_clientHandler.Stream,
+		// 		retailEventRequest.Verb,
+		// 		retailEventRequest.Resource,
+		// 		retailEventRequest.PayloadRetail
+		// 	);
+		// 	retailEventRequest = new RetailEventRequest
+		// 	{
+		// 		Verb = "CHECKIN",
+		// 		Resource = "/customer",
+		// 		PayloadRetail = new PayloadRetail()
+		// 		{
+		// 			Customer = new Customer
+		// 			{
+		// 				CustomerInfo = new CustomerInfo()
+		// 				{
+		// 					ID = "meow",
+		// 					FirstName = "FUcking",
+		// 					LastName = "Cocks",
+		// 					ProfilePictureUrl = "https://jack.polancz.uk/th.jpg"
+		// 				}
+		// 			}
+		// 		}
+		// 	};
+		// 	ClientHandler.RetailEvent(_clientHandler.Stream, retailEventRequest.Verb, retailEventRequest.Resource, retailEventRequest.PayloadRetail);
+		// }
 		static void StartServer()
 		{
 			// Automatic host IP address retrival
@@ -107,8 +119,7 @@ namespace SonicServer
 				TcpClient client = server.AcceptTcpClient();
 				Console.WriteLine($"Connection from {((IPEndPoint)client.Client.RemoteEndPoint!).Address}");
 				// Handle the client request using ClientHandler
-				_clientHandler = new ClientHandler(client);
-				_clientHandler.HandleClient();
+				_activeConnections.Add(new ClientHandler(client));
 			}
 		}
 	}

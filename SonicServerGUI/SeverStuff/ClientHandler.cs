@@ -1,7 +1,10 @@
 using Newtonsoft.Json;
 using SonicServer.JsonClasses;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
+using SimpleLogs4Net;
+using System;
 
 namespace SonicServer
 {
@@ -9,7 +12,7 @@ namespace SonicServer
 	{
 		private const int ClientBufferSize = 1024;
 		private readonly NetworkStream _stream;
-		private bool _isHandShakeDone = false;
+		public HSStatus HandShakeStatus = HSStatus.NotStarted;
 		private Dictionary<string, object[]> _existingItems;
 
 		public ClientHandler(TcpClient client)
@@ -23,13 +26,13 @@ namespace SonicServer
 		{
 			byte[] buffer = new byte[ClientBufferSize];
 			int bytesRead;
-			StringBuilder messageBuilder = new();
+			StringBuilder messageBuilder = new StringBuilder(); // TODO: Use string? should be faster
 			int contentLength = -1;
 
 			while ((bytesRead = _stream.Read(buffer, 0, buffer.Length)) != 0)
 			{
 				string messagePart = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-				if (!_isHandShakeDone)
+				if (HandShakeStatus != HSStatus.Success)
 				{
 					HandShake(messagePart, _stream);
 				}
@@ -57,18 +60,15 @@ namespace SonicServer
 					if (contentLength != -1 && messageBuilder.Length >= contentLength)
 					{
 						string completeMessage = messageBuilder.ToString(0, contentLength);
-						Console.ForegroundColor = ConsoleColor.DarkRed;
-						Console.WriteLine($"RECEIVED: {completeMessage}");
-						JsonData info = JsonConvert.DeserializeObject<JsonData>(completeMessage)!;
+						Log.Write("RECEIVED: " + completeMessage);
+						JsonData info = JsonConvert.DeserializeObject<JsonData>(completeMessage);
 						JsonData info2 =
 							JsonConvert.DeserializeObject<JsonData>(
 								Encoding.UTF8.GetString(
 									Convert.FromBase64String(info.Payload)
 								)
-							)!;
-						Console.ForegroundColor = ConsoleColor.Green;
-						Console.WriteLine(Encoding.UTF8.GetString(Convert.FromBase64String(info2.Payload)));
-						Console.ResetColor();
+							);
+						Log.Write(Encoding.UTF8.GetString(Convert.FromBase64String(info2.Payload)));
 						// Clear the message builder for the next message
 						messageBuilder.Clear();
 						contentLength = -1;
@@ -83,7 +83,7 @@ namespace SonicServer
 			{
 				if (line.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
 				{
-					if (int.TryParse(line["Content-Length:".Length..].Trim(), out int contentLength))
+					if (int.TryParse(line.Substring("Content-Length:".Length).Trim(), out int contentLength))
 					{
 						return contentLength;
 					}
@@ -91,44 +91,39 @@ namespace SonicServer
 			}
 			return -1; // Return -1 if Content-Length header is not found
 		}
-		private void HandShake(string message, NetworkStream stream)
+		private void HandShake(string msg, NetworkStream stream)
 		{
+			HandShakeStatus = HSStatus.InProgress;
 			JsonData response;
-			switch (message)
-			{
-				case { } msg when msg.Contains("CMD hi"):
-					Console.WriteLine("we have handshake p1 sending hi back");
-					Send(stream, "RESP", "hi", null, null);
-					break;
-				case { } msg when msg.Contains("CMD capabilities"):
-					Console.WriteLine("we have handshake p2 sending capabilites");
-					SendJson(stream, "RESP", "capabilities", null);
-					break;
-				case { } msg when msg.Contains("\"For\":\"devicetype\""):
-					Console.WriteLine("sending device info");
-					response = new JsonData
-					{
-						For = "devicetype",
-						Payload = "",
-						Type = "RESP"
-					};
-					SendJson(stream, "DATA", null, response);
-					break;
-				case { } msg when msg.Contains("\"For\":\"stalllogin\""):
-					Console.WriteLine("sending stall info");
-					response = new JsonData
-					{
-						For = "stalllogin",
-						Payload = "",
-						Type = "RESP"
-					};
-					SendJson(stream, "DATA", null, response);
-					Console.WriteLine("Handshake complete! ");
-					_isHandShakeDone = true;
-					break;
+			if (msg.Contains("CMD hi")) {
+				Log.Write("we have handshake p1 sending hi back", EType.Informtion);
+				Send(stream, "RESP", "hi", null, null);
+			} else if (msg.Contains("CMD capabilities")){
+				Log.Write("we have handshake p2 sending capabilites", EType.Informtion);
+				SendJson(stream, "RESP", "capabilities", null);
+			} else if (msg.Contains("\"For\":\"devicetype\"")) {
+				Log.Write("sending device info", EType.Informtion);
+				response = new JsonData
+				{
+					For = "devicetype",
+					Payload = "",
+					Type = "RESP"
+				};
+				SendJson(stream, "DATA", null, response);
+			} else if (msg.Contains("\"For\":\"stalllogin\"")){
+				Log.Write("sending stall info", EType.Informtion);
+				response = new JsonData
+				{
+					For = "stalllogin",
+					Payload = "",
+					Type = "RESP"
+				};
+				SendJson(stream, "DATA", null, response);
+				Log.Write("Handshake complete! ", EType.Informtion);
+				HandShakeStatus = HSStatus.Success;
 			}
 		}
-		public  void Send(NetworkStream conn, string? method, string? path, Dictionary<string, string>? headers, string? body)
+		public void Send(NetworkStream conn, string method, string path, Dictionary<string, string> headers, string body)
 		{
 			string payload = $"{method?.Trim() ?? ""} {path?.Trim() ?? ""}\r\n";
 			if (headers != null)
@@ -145,16 +140,16 @@ namespace SonicServer
 			}
 			payload += "\r\n";
 			byte[] buffer = Encoding.UTF8.GetBytes(payload);
-			Console.WriteLine(payload);
+			Log.Write(payload);
 			conn.Write(buffer, 0, buffer.Length);
 		}
 
-		public  void SendJson(NetworkStream conn, string method, string? path, object? obj)
+		public  void SendJson(NetworkStream conn, string method, string path, object obj)
 		{
-			Dictionary<string, string> headers = new() {
+			Dictionary<string, string> headers = new Dictionary<string, string>() {
 				{ "Content-Type", "text/json" }
 			};
-			string? body = obj != null ? JsonConvert.SerializeObject(obj) : "{}";
+			string body = obj != null ? JsonConvert.SerializeObject(obj) : "{}";
 			headers["Content-Length"] = Encoding.UTF8.GetByteCount(body).ToString();
 			Send(conn, method, path, headers, body);
 		}
@@ -166,7 +161,7 @@ namespace SonicServer
 		}
 		public  void RetailEvent(NetworkStream conn, string verb, string resource, dynamic body)
 		{
-			JsonData payload = new()
+			JsonData payload = new JsonData()
 			{
 				Type = "DATA",
 				For = "stall",
@@ -200,8 +195,8 @@ namespace SonicServer
 			}
 			else
 			{
-					_existingItems.Add(itemId,
-						[desc, category, price, quantity, imagePath,]);
+				object[] objects = { desc, category, price, quantity, imagePath };
+				_existingItems.Add(itemId, objects);
 			}
 			
 			
@@ -222,20 +217,22 @@ namespace SonicServer
 						EmployeeFirstName = "Silly",
 						EmployeeLastName = "Billy",
 						SubTicketList = new List<SubTicket>{
-							new() {
+							new SubTicket() {
 								EntryList = new List<Entry>{
-									new() {
+									new Entry() {
 										ItemId = "1002",
 										MktgDescription = "COCK",
 										Category = "COCK",
 										Price = "69",
 										Quantity = 69,
 										ImagePath = "../../../../../../../test.png",
-										ModifierList = new List<ModifierList>{ new()
-										{
-											ModifierId = "morecock",
-											MktgDescription = "more cock"
-										}}
+										ModifierList = new List<ModifierList>{ 
+											new ModifierList()
+											{
+												ModifierId = "morecock",
+												MktgDescription = "more cock"
+											}
+										}
 									}
 								}
 							}
