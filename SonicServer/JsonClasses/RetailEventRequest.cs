@@ -2,7 +2,7 @@
 
 namespace SonicServer.JsonClasses
 {
-	public class RetailEventRequest
+	public struct RetailEventRequest
 	{
 		public string Type { get; set; }
 		public string For { get; set; }

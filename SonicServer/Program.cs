@@ -1,4 +1,5 @@
-﻿using SonicServer.JsonClasses;
+﻿using Pastel;
+using SonicServer.JsonClasses;
 using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
@@ -12,8 +13,10 @@ namespace SonicServer
 		private static Logger ServerLogger = new Logger("Server", Color.CornflowerBlue);
 
 		public static List<ClientHandler> _activeConnections = new List<ClientHandler>();
+		public static Settings? settings { get; private set; }
 
-		static void Main(string[] args)
+
+        static void Main(string[] args)
 		{
 			// Timer timer = new()
 			// {
@@ -102,11 +105,11 @@ namespace SonicServer
 		// }
 		public static void HandleDisconnect(ClientHandler handler)
 		{
-			ServerLogger.Info("Client", handler.id, "requested disconnect.");
+			ServerLogger.Info("Client", handler.id.ToString().Pastel(Color.IndianRed), "requested disconnect.");
 			if (_activeConnections.Remove(handler))
-				ServerLogger.Info("Successfully removed client", handler.id, "from registry.");
+				ServerLogger.Info("Successfully removed client", handler.id.ToString().Pastel(Color.IndianRed), "from registry.");
             else
-                ServerLogger.Error("Failed to remove client", handler.id, "from registry.");
+                ServerLogger.Error("Failed to remove client", handler.id.ToString().Pastel(Color.IndianRed), "from registry.");
         }
 		static void StartServer()
 		{
@@ -127,7 +130,7 @@ namespace SonicServer
             //! address = "192.168.1.109"
             ServerLogger.Info("Reading config from cfg.json");
             ServerLogger.Newline();
-            Settings settings = Config.ReadFromFile();
+            settings = Config.ReadFromFile();
 			
 			//if (settings.DebugIP != null)
 			//{

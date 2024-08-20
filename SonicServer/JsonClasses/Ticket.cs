@@ -1,6 +1,6 @@
 ﻿namespace SonicServer.JsonClasses
 {
-	public class Ticket
+	public struct Ticket
 	{
 		public string State { get; set; }
 		public string Total { get; set; }

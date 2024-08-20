@@ -21,7 +21,7 @@ namespace SonicServer
         }
         private static string SpaceTextInMiddleOfText(string source, string target)
         {
-            return new string(' ', source.Length / 2 - target.Length / 2) + target;
+            return new string(' ', Math.Max(0, source.Length / 2 - target.Length / 2)) + target;
         }
 
         public static void LogHeader(string headerCharacter, string text, Color headerColor, Color textColor, int padding)
