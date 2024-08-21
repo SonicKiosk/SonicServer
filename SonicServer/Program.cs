@@ -1,9 +1,12 @@
 ﻿using Pastel;
+using ServerUI;
 using SonicServer.JsonClasses;
 using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
 using System.Timers;
+using System.Web;
+using System.Windows.Forms;
 using Timer = System.Timers.Timer;
 
 namespace SonicServer
@@ -14,6 +17,7 @@ namespace SonicServer
 
 		public static List<ClientHandler> _activeConnections = new List<ClientHandler>();
 		public static Settings? settings { get; private set; }
+		public static SUI? ServerUI { get; private set; }
 
 
         static void Main(string[] args)
@@ -111,6 +115,15 @@ namespace SonicServer
             else
                 ServerLogger.Error("Failed to remove client", handler.id.ToString().Pastel(Color.IndianRed), "from registry.");
         }
+
+		static void UIThread(TcpListener server, string host, int port)
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+			ServerUI = new SUI(server, host, port);
+            Application.Run(ServerUI);
+        }
 		static void StartServer()
 		{
 			Logger.LogHeader("=-", "Sonic C# Server.", Color.Yellow, Color.Gold, 1);
@@ -155,6 +168,8 @@ namespace SonicServer
             {
                 server = new(IPAddress.Parse(host), port);
                 server.Start();
+
+				new Thread(() => UIThread(server, host, port)).Start();
             }
 			catch(Exception ex)
 			{
