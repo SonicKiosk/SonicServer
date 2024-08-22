@@ -1,6 +1,5 @@
-﻿using SimpleLogs4Net;
-using System;
-using System.IO;
+﻿using System;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace SonicServer.GUI
@@ -10,11 +9,15 @@ namespace SonicServer.GUI
 		[STAThread]
 		static void Main()
 		{
-			MainForm form = new MainForm();
-			LogConfiguration.Initialize(AppDomain.CurrentDomain.BaseDirectory + "Logs" + Path.DirectorySeparatorChar, OutputStream.Both);
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(form);
+			/*Thread d = new Thread(() =>
+			{
+				Thread.Sleep(2000);
+				Console.WriteLine("KYS");
+			});
+			d.Start();*/
+			Application.Run(new MainForm());
 		}
 	}
 }

@@ -20,6 +20,7 @@ namespace SonicServer.GUI
 			consoleForm1.Show();
 #endif
 			InitializeComponent();
+			Server.Start();
 		}
 	}
 }

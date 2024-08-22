@@ -2,37 +2,33 @@
 using System.IO;
 using System.Windows.Forms;
 using System.Drawing;
+using System;
 
 namespace SonicServer.GUI.SeverStuff
 {
 	internal class ConsoleToFormTextWriter : TextWriter
 	{
-		private RichTextBox box;
+		public delegate void WriteToBox(string text, Color color);
+		private WriteToBox ToBox;
 		private Color color;
-		public ConsoleToFormTextWriter(ref RichTextBox textbox, Color color)
+		public ConsoleToFormTextWriter(WriteToBox textbox, Color color)
 		{
-			this.box = textbox;
+			ToBox = textbox;
 			this.color = color;
 		}
 
 		public override void Write(char value)
 		{
-			box.SelectionStart = box.TextLength;
-			box.SelectionLength = 0;
-
-			box.SelectionColor = color;
-			box.AppendText(value.ToString());
-			box.SelectionColor = box.ForeColor;
+			ToBox.Invoke(value.ToString(), color);
 		}
 
 		public override void Write(string value)
 		{
-			box.SelectionStart = box.TextLength;
-			box.SelectionLength = 0;
-
-			box.SelectionColor = color;
-			box.AppendText(value);
-			box.SelectionColor = box.ForeColor;
+			ToBox.Invoke(value, color);
+		}
+		public override void WriteLine(string value)
+		{
+			ToBox.Invoke(value, color);
 		}
 		public override Encoding Encoding
 		{

@@ -22,15 +22,13 @@ namespace SonicServer.JsonClasses
                 State = "ACTIVE",
                 Total = "0.00",
                 Tax = "0.00",
-                SubTicketList = new List<SubTicket>()
-                    {
-                        new SubTicket()
+                SubTicketList =
+					[
+						new SubTicket()
                         {
-                            EntryList=new List<Entry>()
-                            {
-                            }
+                            EntryList=[]
                         }
-                    }
+                    ]
             };
         }
         public static void Checkin(ClientHandler client, Customer info)
