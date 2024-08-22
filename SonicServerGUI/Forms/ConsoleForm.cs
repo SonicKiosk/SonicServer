@@ -22,7 +22,7 @@ namespace SonicServer.GUI
 				richTextBox1.SelectionLength = 0;
 
 				richTextBox1.SelectionColor = color;
-				richTextBox1.AppendText($"{DateTime.Now:HH:mm:ss} - {text}\n");
+				richTextBox1.AppendText($"{DateTime.Now:HH:mm:ss} - {text}");
 				richTextBox1.SelectionColor = richTextBox1.ForeColor;
 			}
 		}
@@ -32,6 +32,13 @@ namespace SonicServer.GUI
 			Console.SetError(new ConsoleToFormTextWriter(WriteTextSafe, Color.Red));
 			InitializeComponent();
 			richTextBox1.Text = "";
+			this.FormClosing += ConsoleForm_FormClosing;
+		}
+
+		private void ConsoleForm_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			this.Visible = false;
+			e.Cancel = true;
 		}
 	}
 }

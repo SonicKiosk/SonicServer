@@ -26,8 +26,8 @@ namespace SonicServer
 		{
 			this.client = client;
 			this.id = Guid.NewGuid();
-			var loggerFactory = new LoggerFactory();
-			ClientLogger = new LoggerFactory().CreateLogger($"Client {id}");
+			using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+			ClientLogger = loggerFactory.CreateLogger($"Client {id}");
 			ClientLogger.LogDebug("working");
 
 			new Thread(() =>
