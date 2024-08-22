@@ -3,7 +3,7 @@
 namespace SonicServer.JsonClasses
 {
 	[JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
-	public class PayloadRetail
+	public struct PayloadRetail
 	{
 		public Ticket Ticket { get; set; }
 		public Customer? Customer { get; set; }

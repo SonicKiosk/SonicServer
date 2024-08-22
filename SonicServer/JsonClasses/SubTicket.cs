@@ -1,6 +1,6 @@
 ﻿namespace SonicServer.JsonClasses
 {
-	public class SubTicket
+	public struct SubTicket
 	{
 		public List<Entry> EntryList { get; set; }
 	}

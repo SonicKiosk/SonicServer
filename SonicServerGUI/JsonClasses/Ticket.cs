@@ -1,4 +1,6 @@
-﻿namespace SonicServer.JsonClasses
+﻿using System.Collections.Generic;
+
+namespace SonicServer.JsonClasses
 {
 	public class Ticket
 	{

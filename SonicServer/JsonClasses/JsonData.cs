@@ -1,6 +1,6 @@
 ﻿namespace SonicServer.JsonClasses
 {
-	public class JsonData
+	public struct JsonData
 	{
 		public string For { get; set; }
 		public string Payload { get; set; }

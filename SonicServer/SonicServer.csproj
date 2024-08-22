@@ -2,14 +2,21 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net8.0-windows</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <Platforms>AnyCPU;x64</Platforms>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="Pastel" Version="5.1.0" />
       <PackageReference Include="SuperSocket" Version="2.0.0-beta.24" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ServerUIWinforms\ServerUI.csproj" />
     </ItemGroup>
 
 </Project>

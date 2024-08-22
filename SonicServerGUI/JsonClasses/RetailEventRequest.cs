@@ -1,10 +1,12 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace SonicServer.JsonClasses
 {
 	public class RetailEventRequest
 	{
-		public string Type { get; set; }
+		[JsonConverter(typeof(StringEnumConverter))]
+		public ResponseType Type { get; set; }
 		public string For { get; set; }
 		public string Verb { get; set; }
 		public string Resource { get; set; }

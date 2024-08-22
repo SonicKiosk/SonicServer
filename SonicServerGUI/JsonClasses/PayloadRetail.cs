@@ -6,6 +6,6 @@ namespace SonicServer.JsonClasses
 	public class PayloadRetail
 	{
 		public Ticket Ticket { get; set; }
-		public Customer? Customer { get; set; }
+		public Customer Customer { get; set; }
 	}
 }

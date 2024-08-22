@@ -10,10 +10,11 @@ namespace SonicServer.GUI
 		[STAThread]
 		static void Main()
 		{
+			MainForm form = new MainForm();
 			LogConfiguration.Initialize(AppDomain.CurrentDomain.BaseDirectory + "Logs" + Path.DirectorySeparatorChar, OutputStream.Both);
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new MainForm());
+			Application.Run(form);
 		}
 	}
 }

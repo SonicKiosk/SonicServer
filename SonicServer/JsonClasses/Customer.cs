@@ -2,7 +2,7 @@
 
 namespace SonicServer.JsonClasses
 {
-	public class Customer
+	public struct Customer
 	{
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public CustomerInfo CustomerInfo { get; set; }
