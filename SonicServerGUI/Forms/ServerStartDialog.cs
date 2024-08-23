@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace SonicServer.GUI.Forms
 {
-	public partial class ServerStartDialog : SettingDialog
+	public partial class ServerStartDialog : Form
 	{
 		public IPAddress ChosenIP;
 		public int ChosenPort;
@@ -20,20 +20,6 @@ namespace SonicServer.GUI.Forms
 		{
 			InitializeComponent();
 		}
-		public override void AdvancedChanged(bool showAdvanced)
-		{
-			if (showAdvanced)
-			{
-				NumPort.Minimum = 0;
-				IPcb.DropDownStyle = ComboBoxStyle.Simple;
-			}
-			else
-			{
-				NumPort.Minimum = 1025;
-				IPcb.DropDownStyle = ComboBoxStyle.DropDownList;
-			}
-		}
-
 		private void ServerStartDialog_Load(object sender, EventArgs e)
 		{
 			IPAddress[] addresses = Array.FindAll(
@@ -45,10 +31,32 @@ namespace SonicServer.GUI.Forms
 			}
 			IPcb.Text = IPcb.Items[0].ToString();
 		}
-		public override void OKBtnClicked()
+		private void ChBoxAdvanced_CheckedChanged(object sender, EventArgs e)
+		{
+			if (ChBoxAdvanced.Checked)
+			{
+				NumPort.Minimum = 0;
+				IPcb.DropDownStyle = ComboBoxStyle.Simple;
+			}
+			else
+			{
+				NumPort.Minimum = 1025;
+				IPcb.DropDownStyle = ComboBoxStyle.DropDownList;
+			}
+		}
+
+		private void btnStart_Click(object sender, EventArgs e)
 		{
 			ChosenIP = IPAddress.Parse(IPcb.Text);
 			ChosenPort = Convert.ToInt32(NumPort.Value);
+			this.DialogResult = DialogResult.OK;
+			this.Close();
+		}
+
+		private void btnCancel_Click(object sender, EventArgs e)
+		{
+			this.DialogResult = DialogResult.Cancel;
+			this.Close();
 		}
 	}
 }
