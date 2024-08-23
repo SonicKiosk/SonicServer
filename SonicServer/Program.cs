@@ -22,91 +22,11 @@ namespace SonicServer
 
         static void Main(string[] args)
 		{
-			// Timer timer = new()
-			// {
-			// 	Interval = 10000,
-			// 	Enabled = true
-			// };
-			// timer.Elapsed += TimerOnElapsed;
-			// timer.Interval = 20000;
-			// timer.Enabled = true;
+			
 			StartServer();
 		}
 
-		// private static void TimerOnElapsed(object? sender, ElapsedEventArgs e)
-		// {
-		// 	RetailEventRequest retailEventRequest;
-		// 	retailEventRequest = new RetailEventRequest
-		// 	{
-		// 		Type = "RQST",
-		// 		For = "retail",
-		// 		Verb = "POST",
-		// 		Resource = "/retail/ticket",
-		// 		PayloadRetail = new PayloadRetail
-		// 		{
-		// 			Ticket = new Ticket
-		// 			{
-		// 				State = "ACTIVE",
-		// 				Total = "420.69",
-		// 				Tax = "13.37",
-		// 				EmployeeFirstName = "Silly",
-		// 				EmployeeLastName = "Billy",
-		// 				SubTicketList = new List<SubTicket>{
-		// 					new() {
-		// 						EntryList = new List<Entry>{
-		// 							new() {
-		// 								ItemId = "1002",
-		// 								MktgDescription = "COCK",
-		// 								Category = "COCK",
-		// 								Price = "69",
-		// 								Quantity = 69,
-		// 								ImagePath = "../../../../../../../test.png",
-		// 								ModifierList = new List<ModifierList>{ new()
-		// 								{
-		// 									ModifierId = "morecock",
-		// 									MktgDescription = "more cock"
-		// 								}}
-		// 							}
-		// 						}
-		// 					}
-		// 				}
-		// 			}
-		// 		}
-		// 	};
-		// 	// for (int i = 0; i < 100; i++)
-		// 	// {
-		// 	// 	retailEventRequest.PayloadRetail.Ticket.SubTicketList[0].EntryList[0].ModifierList.Add(new()
-		// 	// 	{
-		// 	// 		ModifierId = "morecock",
-		// 	// 		MktgDescription = "more cock"
-		// 	// 	});
-		// 	// }
-		// 	ClientHandler.RetailEvent(
-		// 		_clientHandler.Stream,
-		// 		retailEventRequest.Verb,
-		// 		retailEventRequest.Resource,
-		// 		retailEventRequest.PayloadRetail
-		// 	);
-		// 	retailEventRequest = new RetailEventRequest
-		// 	{
-		// 		Verb = "CHECKIN",
-		// 		Resource = "/customer",
-		// 		PayloadRetail = new PayloadRetail()
-		// 		{
-		// 			Customer = new Customer
-		// 			{
-		// 				CustomerInfo = new CustomerInfo()
-		// 				{
-		// 					ID = "meow",
-		// 					FirstName = "FUcking",
-		// 					LastName = "Cocks",
-		// 					ProfilePictureUrl = "https://jack.polancz.uk/th.jpg"
-		// 				}
-		// 			}
-		// 		}
-		// 	};
-		// 	ClientHandler.RetailEvent(_clientHandler.Stream, retailEventRequest.Verb, retailEventRequest.Resource, retailEventRequest.PayloadRetail);
-		// }
+		
 		public static void HandleDisconnect(ClientHandler handler)
 		{
 			ServerLogger.Info("Client", handler.id.ToString().Pastel(Color.IndianRed), "requested disconnect.");
@@ -127,29 +47,9 @@ namespace SonicServer
 		static void StartServer()
 		{
 			Logger.LogHeader("=-", "Sonic C# Server.", Color.Yellow, Color.Gold, 1);
-            //log test
-            //Logger test = new Logger("test", Color.CornflowerBlue);// + Logger.ConsoleStyles.BOLD);
-            //ServerLogger.Info("hi", 231, "param3");
-            //ServerLogger.Error("hello", null, 2.4f);
-            //ServerLogger.Warn("hey", true, '\n');
-
-            // Automatic host IP address retrival - this shit NEVER works. using readline with a config.
-            //IPAddress address = Array.Find(
-            //	Dns.GetHostEntry(Dns.GetHostName()).AddressList,
-            //	(x) => x.AddressFamily == AddressFamily.InterNetwork
-            //);
-
-            //string host = address.ToString(); //"192.168.1.109"; // localhost
-            //! address = "192.168.1.109"
             ServerLogger.Info("Reading config from cfg.json");
             ServerLogger.Newline();
             settings = Config.ReadFromFile();
-			
-			//if (settings.DebugIP != null)
-			//{
-			//	ServerLogger.Debug($"IP override found. Using ip {settings.DebugIP} (\"DebugIP\")");
-
-			//}
             if (settings.DebugIP == null) // yucky cluttered block
 			{
 				ServerLogger.Info("Host IP was null. Enter IP address:");
