@@ -24,20 +24,20 @@ namespace SonicServer.GUI
 			if (Server.IsStarted)
 			{
 				DialogResult result = MessageBox.Show(
-					"The Server is still running!\nAre you sure you want to exit?", 
+					"The Server is still running!\nAre you sure you want to exit?",
 					"Sonic Server", //title
-					MessageBoxButtons.OKCancel, 
+					MessageBoxButtons.OKCancel,
 					MessageBoxIcon.Warning
 				);
-                if (result == DialogResult.OK)
-                {
-                    Server.Stop();
-                }
+				if (result == DialogResult.OK)
+				{
+					Server.Stop();
+				}
 				else
 				{
 					e.Cancel = true;
 				}
-            }
+			}
 		}
 
 		private void Console_Shown(object sender, EventArgs e)

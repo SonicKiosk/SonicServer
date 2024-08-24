@@ -1,7 +1,7 @@
-﻿using System;
+﻿using SonicServer.GUI.SeverStuff;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
-using SonicServer.GUI.SeverStuff;
 
 namespace SonicServer.GUI
 {

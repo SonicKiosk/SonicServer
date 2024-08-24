@@ -1,8 +1,6 @@
-﻿using System.Text;
+﻿using System.Drawing;
 using System.IO;
-using System.Windows.Forms;
-using System.Drawing;
-using System;
+using System.Text;
 
 namespace SonicServer.GUI.SeverStuff
 {

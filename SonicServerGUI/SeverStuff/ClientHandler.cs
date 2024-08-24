@@ -1,13 +1,11 @@
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SonicServer.JsonClasses;
-using System.Net;
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using SonicServer.GUI;
 using System.Threading;
 
 namespace SonicServer
