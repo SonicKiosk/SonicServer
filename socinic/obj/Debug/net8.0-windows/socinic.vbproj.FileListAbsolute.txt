@@ -1,0 +1,16 @@
+C:\Users\blaze\source\repos\socinic\socinic\bin\Debug\net8.0-windows\socinic.exe
+C:\Users\blaze\source\repos\socinic\socinic\bin\Debug\net8.0-windows\socinic.deps.json
+C:\Users\blaze\source\repos\socinic\socinic\bin\Debug\net8.0-windows\socinic.runtimeconfig.json
+C:\Users\blaze\source\repos\socinic\socinic\bin\Debug\net8.0-windows\socinic.dll
+C:\Users\blaze\source\repos\socinic\socinic\bin\Debug\net8.0-windows\socinic.pdb
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\socinic.Form1.resources
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\socinic.vbproj.GenerateResource.cache
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\socinic.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\socinic.AssemblyInfoInputs.cache
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\socinic.AssemblyInfo.vb
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\socinic.vbproj.CoreCompileInputs.cache
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\socinic.dll
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\refint\socinic.dll
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\socinic.pdb
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\socinic.genruntimeconfig.cache
+C:\Users\blaze\source\repos\socinic\socinic\obj\Debug\net8.0-windows\ref\socinic.dll
