@@ -4,10 +4,11 @@ wip server emulations system for Sonic Kisoks
 
 ## Build
 
-need dotnet 8
+need .net framework 4.7.2 sdk
+and nuget package manager
 
-in Program.cs change the ip to the ip you want (localhost or 127.0.0.1 usually)
+## Run
+You can select the IP Address in the server start dialog
 
-build and run 
-
-when it connects to the sonic kiosk after 20 seconds it will add 69 cocks to till and log you in as a user
+# This still is a work in progress so most things are not ready
+however you can help us get it done a bit faster <sup>[Citation needed]</sup>
