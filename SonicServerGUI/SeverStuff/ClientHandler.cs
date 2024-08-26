@@ -1,22 +1,22 @@
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Pastel;
 using SonicServer.JsonClasses;
-using System.Drawing;
-using System.Net;
+using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Json.Nodes;
+using System.Threading;
 
 namespace SonicServer
 {
 	public class ClientHandler
 	{
-		Logger ClientLogger = null;
+		ILogger ClientLogger = null;
 		private const int ClientBufferSize = 2048; // doubled the size since packets can be large asl
 		private NetworkStream _stream;
 		private readonly TcpClient client;
-		private bool _isHandShakeDone = false;
+		public HSStatus HandShakeStatus = HSStatus.NotStarted;
 		public Guid id { get; private set; } = Guid.Empty;
 		private Dictionary<string, object[]> _existingItems = new Dictionary<string, object[]>();
 
@@ -24,14 +24,14 @@ namespace SonicServer
 		{
 			this.client = client;
 			this.id = Guid.NewGuid();
-			//{((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString().Pastel(Color.MediumAquamarine)}
-			ClientLogger = new Logger($"Client {id.ToString().Pastel(Color.MediumAquamarine)}", Color.Chartreuse);
+			using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+			ClientLogger = loggerFactory.CreateLogger($"Client {id}");
+			ClientLogger.LogDebug("working");
 
-			//ClientLogger.Info("herro");
 			new Thread(() =>
 			{
 				_stream = client.GetStream();
-				ClientLogger.Info("Initialized ClientHandler.");
+				ClientLogger.LogInformation("Initialized ClientHandler.");
 				HandleClient();
 			}).Start();
 
@@ -40,8 +40,8 @@ namespace SonicServer
 		public NetworkStream Stream => _stream;
 		public void Disconnect()
 		{
-			ClientLogger.Info("Disconnecting.");
-			Program.HandleDisconnect(this);
+			ClientLogger.LogInformation("Disconnecting.");
+			Server.HandleDisconnect(this);
 		}
 		public void CheckForDisconnect()
 		{
@@ -56,8 +56,7 @@ namespace SonicServer
 			int bytesRead;
 			StringBuilder messageBuilder = new();
 			int contentLength = -1;
-
-			if (_stream == null || !_stream.CanRead || !_stream.Socket.Connected)
+			if (_stream == null || !_stream.CanRead)// || !_stream.Socket.Connected)   <- Doesn't exist in .NET Framework
 			{
 				Disconnect();
 				return;
@@ -66,7 +65,7 @@ namespace SonicServer
 			while ((bytesRead = _stream.Read(buffer, 0, buffer.Length)) != 0)
 			{
 				string messagePart = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-				if (!_isHandShakeDone)
+				if (HandShakeStatus != HSStatus.Success || HandShakeStatus != HSStatus.Failure)
 				{
 					HandShake(messagePart, _stream);
 				}
@@ -111,9 +110,9 @@ namespace SonicServer
 									)
 								)!;
 						//Console.ForegroundColor = ConsoleColor.Green;
-						if (_isHandShakeDone)
+						if (HandShakeStatus == HSStatus.Success)
 						{
-							ClientLogger.Debug("Payload:", decoded.ToString());
+							ClientLogger.LogDebug("Payload:", decoded.ToString());
 						}
 						// Encoding.UTF8.GetString(Convert.FromBase64String(decoded.Payload)).Pastel(Color.DarkSalmon));
 						//Console.ResetColor();
@@ -131,7 +130,7 @@ namespace SonicServer
 			{
 				if (line.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
 				{
-					if (int.TryParse(line["Content-Length:".Length..].Trim(), out int contentLength))
+					if (int.TryParse(line.Substring("Content-Length:".Length).Trim(), out int contentLength))
 					{
 						return contentLength;
 					}
@@ -141,34 +140,35 @@ namespace SonicServer
 		}
 		private void HandShake(string message, NetworkStream stream)
 		{
+			HandShakeStatus = HSStatus.InProgress;
 			JsonData response;
 			switch (message)
 			{
 				case { } msg when msg.Contains("CMD hi"): // init, hi
-					ClientLogger.Info("Sending HI");
+					ClientLogger.LogInformation("Sending HI");
 					Send(stream, "RESP", "hi", null, null);
 					break;
 				case { } msg when msg.Contains("CMD capabilities"): // init 2, capabilities
-					ClientLogger.Info("Sending Capabilities");
+					ClientLogger.LogInformation("Sending Capabilities");
 					SendJson(stream, "RESP", "capabilities", null);
 					break;
 				case { } msg when msg.Contains("\"For\":\"devicetype\""): // init 3, send device info
-					ClientLogger.Info("Sending device info");
+					ClientLogger.LogInformation("Sending device info");
 					response = new JsonData
 					{
 						For = "devicetype",
 						Payload = "",
-						Type = "RESP"
+						Type = ResponseType.RESP
 					};
 					SendJson(stream, "DATA", null, response);
 					break;
 				case { } msg when msg.Contains("\"For\":\"stalllogin\""): // init 3, send device (stall) info
-					ClientLogger.Info("Sending stall info");
+					ClientLogger.LogInformation("Sending stall info");
 					response = new JsonData
 					{
 						For = "stalllogin",
 						Payload = "",
-						Type = "RESP"
+						Type = ResponseType.RESP
 					};
 					SendJson(stream, "DATA", null, response);
 					RetailEventUtils.Checkin(this, new Customer()
@@ -184,29 +184,42 @@ namespace SonicServer
 					});
 					RetailEventUtils.Ticket(this, RetailEventUtils.GetDummyTicket());
 					AddItem("1", "2", "3", "4", 0, "5");
-					ClientLogger.Info("Handshake complete!");
-					_isHandShakeDone = true;
+					ClientLogger.LogInformation("Handshake complete!");
+					HandShakeStatus = HSStatus.Success;
 					break;
 			}
 		}
 		public void Send(NetworkStream conn, string? method, string? path, Dictionary<string, string>? headers, string? body)
 		{
-			string payload = $"{method?.Trim() ?? ""} {path?.Trim() ?? ""}\r\n";
-			if (headers != null)
-			{
-				foreach (var header in headers)
-				{
-					payload += header.Key + ": " + header.Value + "\r\n"; // I know that it looks worse than stringbuilder but it's faster
-				}
-			}
-			payload += "\r\n";
-			if (!string.IsNullOrWhiteSpace(body))
-			{
-				payload += body.Trim().Replace('\r', '\0').Replace("\n", "\r\n");
-			}
-			payload += "\r\n";
+			StringBuilder payload = new StringBuilder($"{method?.Trim() ?? ""} {path?.Trim() ?? ""}\r\n");
 
-			byte[] buffer = Encoding.UTF8.GetBytes(payload);
+			if (headers != null)
+				foreach (KeyValuePair<string, string> header in headers)
+					payload.Append($"{header.Key}: {header.Value}\r\n");
+
+			payload.Append("\r\n");
+			if (!string.IsNullOrWhiteSpace(body))
+				payload.Append(body.Trim().Replace('\r', '\0').Replace("\n", "\r\n"));
+
+			payload.Append("\r\n");
+
+
+			//string payload = $"{method?.Trim() ?? ""} {path?.Trim() ?? ""}\r\n";
+			//if (headers != null)
+			//{
+			//    foreach (var header in headers)
+			//    {
+			//        payload += header.Key + ": " + header.Value + "\r\n"; // I know that it looks worse than stringbuilder but it's faster
+			//    }
+			//}
+			//payload += "\r\n";
+			//if (!string.IsNullOrEmpty(body))
+			//{
+			//    payload += body.Trim().Replace('\r', '\0').Replace("\n", "\r\n");
+			//}
+			//payload += "\r\n";
+
+			byte[] buffer = Encoding.UTF8.GetBytes(payload.ToString());
 			//ClientLogger.Debug(payload);
 			conn.Write(buffer, 0, buffer.Length);
 		}
@@ -217,7 +230,7 @@ namespace SonicServer
 				{ "Content-Type", "text/json" }
 			};
 			string? body = obj != null ? JsonConvert.SerializeObject(obj) : "{}";
-			ClientLogger.Debug(body);
+			ClientLogger.LogDebug(body);
 			headers["Content-Length"] = Encoding.UTF8.GetByteCount(body).ToString();
 			Send(conn, method, path, headers, body);
 		}
@@ -231,16 +244,16 @@ namespace SonicServer
 		{
 			JsonData payload = new()
 			{
-				Type = "DATA",
+				Type = ResponseType.DATA,
 				For = "stall",
 				Payload = B64Json(new JsonData
 				{
-					Type = "DATA",
+					Type = ResponseType.DATA,
 					For = "stall",
 					ServiceId = "retail",
 					Payload = B64Json(new RetailEventRequest
 					{
-						Type = "RQST",
+						Type = ResponseType.RQST,
 						For = "retail",
 						Verb = verb,
 						Resource = resource,
@@ -271,7 +284,7 @@ namespace SonicServer
 
 			var retailEventRequest = new RetailEventRequest
 			{
-				Type = "RQST",
+				Type = ResponseType.RQST,
 				For = "retail",
 				Verb = "POST",
 				Resource = "/retail/ticket",
@@ -286,7 +299,7 @@ namespace SonicServer
 						EmployeeLastName = "Billy",
 						SubTicketList = new List<SubTicket>{
 							new() {
-								EntryList = [
+								EntryList = new List<Entry>{
 									new() {
 										ItemId = "1002",
 										MktgDescription = "COCK",
@@ -300,7 +313,7 @@ namespace SonicServer
 											MktgDescription = "more cock"
 										}}
 									}
-								]
+								}
 							}
 						}
 					}
