@@ -10,8 +10,8 @@ namespace SonicServer.JsonClasses
     {
         public enum RetailEndpoint
         {
-            CheckIn=0,
-            Ticket=1
+            CheckIn = 0,
+            Ticket = 1
         }
         public static Ticket GetDummyTicket()
         {
@@ -36,6 +36,24 @@ namespace SonicServer.JsonClasses
         public static void Checkin(ClientHandler client, Customer info)
         {
             client.RetailEvent(client.Stream, "CHECKIN", "/customer", new PayloadRetail() { Customer = info });
+        }
+
+        public static void Checkout(ClientHandler client, Customer info)
+        {
+            client.RetailEvent(client.Stream, "CHECKOUT", "/customer", new PayloadRetail() { Customer = info });
+        }
+        public enum CrashMethod
+        {
+            InvalidCheckoutPacket = 0,
+        }
+        public static void CrashClient(ClientHandler client, CrashMethod method)
+        {
+            switch (method)
+            {
+                case CrashMethod.InvalidCheckoutPacket:
+                    client.RetailEvent(client.Stream, "CHECKOUT", "/customer", new PayloadRetail() { });
+                    break;
+            }
         }
         public static void Ticket(ClientHandler client, Ticket ticket)
         {

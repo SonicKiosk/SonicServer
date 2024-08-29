@@ -19,7 +19,7 @@ namespace SonicServer
     }
     public class Config
     {
-        static string FileDirectory = Path.GetDirectoryName(Environment.ProcessPath)!; // shut up shut up shut up
+        static string FileDirectory = AppDomain.CurrentDomain.BaseDirectory; // shut up shut up shut up
         static string Resolve(string path)
         {
             return Path.Combine(FileDirectory, path);

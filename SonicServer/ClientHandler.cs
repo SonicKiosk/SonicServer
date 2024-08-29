@@ -12,13 +12,14 @@ namespace SonicServer
 {
     public class ClientHandler
     {
-        Logger ClientLogger = null;
+        Logger ClientLogger;
+        public CustomerInfo clientInfo;
         private const int ClientBufferSize = 2048; // doubled the size since packets can be large asl
         private NetworkStream _stream;
         private readonly TcpClient client;
         private bool _isHandShakeDone = false;
         public Guid id { get; private set; } = Guid.Empty;
-        private Dictionary<string, object[]> _existingItems = new Dictionary<string, object[]>();
+        private Dictionary<string, Entry> _existingItems = new Dictionary<string, Entry>();
 
         public ClientHandler(TcpClient client)
         {
@@ -38,10 +39,14 @@ namespace SonicServer
             new Thread(CheckForDisconnect).Start();
         }
         public NetworkStream Stream => _stream;
+        private bool _isDisconnecting = false;
         public void Disconnect()
         {
+            if (_isDisconnecting)
+                return;
+            _isDisconnecting = true;
             ClientLogger.Info("Disconnecting.");
-            Program.HandleDisconnect(this);
+            SServer.HandleDisconnect(this);
         }
         public void CheckForDisconnect()
         {
@@ -57,14 +62,24 @@ namespace SonicServer
             StringBuilder messageBuilder = new();
             int contentLength = -1;
 
-            if (_stream == null || !_stream.CanRead || !_stream.Socket.Connected)
+            while (true)
             {
-                Disconnect();
-                return;
-            }
+                if (_stream == null || !_stream.CanRead || !_stream.Socket.Connected)
+                {
+                    ClientLogger.Info("Stream is dead.");
+                    Disconnect();
+                    return;
+                }
+                if ((bytesRead = _stream.Socket.Receive(buffer, 0, buffer.Length, SocketFlags.None, out SocketError errorCode)) == 0)
+                    continue;
 
-            while ((bytesRead = _stream.Read(buffer, 0, buffer.Length)) != 0)
-            {
+                if (errorCode != SocketError.Success)
+                {
+                    ClientLogger.Info("Socket failed.");
+                    Disconnect();
+                    return;
+                }
+
                 string messagePart = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                 if (!_isHandShakeDone)
                 {
@@ -111,10 +126,19 @@ namespace SonicServer
                                     )
                                 )!;
                         //Console.ForegroundColor = ConsoleColor.Green;
-                        if (_isHandShakeDone)
-                        {
-                            ClientLogger.Debug("Payload:", decoded.ToString());
-                        }
+                        if (decoded.ContainsKey("For") && decoded["For"]!.ToString() == "/sync/snapshot")
+                            try
+                            {
+                                ClientLogger.Debug("syncinfo:", JsonConvert.SerializeObject(JsonConvert.DeserializeObject<SyncInfo>(decoded["SyncInfo"]!.ToString()).Software.CurrentConfig.App).ToString());
+                            }
+                            catch
+                            {
+                                ClientLogger.Error("Failed to parse SyncInfo. Some features may not work.");
+                                //Disconnect();
+                            }
+                                //if (_isHandShakeDone)
+                        //{
+                        //}
                         // Encoding.UTF8.GetString(Convert.FromBase64String(decoded.Payload)).Pastel(Color.DarkSalmon));
                         //Console.ResetColor();
                         // Clear the message builder for the next message
@@ -171,19 +195,19 @@ namespace SonicServer
                         Type = "RESP"
                     };
                     SendJson(stream, "DATA", null, response);
-                    RetailEventUtils.Checkin(this, new Customer()
-                    {
-                        CustomerInfo = new CustomerInfo()
-                        {
-                            ID = "joee",
-                            FirstName = "Joe",
-                            LastName = "Swanson",
-                            //Message = "Pluh",
-                            ProfilePictureUrl = "https://vignette.wikia.nocookie.net/universe-of-smash-bros-lawl/images/7/77/Joe.png/revision/latest?cb=20190422095447"
-                        }
-                    });
-                    RetailEventUtils.Ticket(this, RetailEventUtils.GetDummyTicket());
-                    AddItem("1", "2", "3", "4", 0, "5");
+                    //RetailEventUtils.Checkin(this, new Customer()
+                    //{
+                    //    CustomerInfo = new CustomerInfo()
+                    //    {
+                    //        ID = "joee",
+                    //        FirstName = "Joe",
+                    //        LastName = "Swanson",
+                    //        //Message = "Pluh",
+                    //        ProfilePictureUrl = "https://vignette.wikia.nocookie.net/universe-of-smash-bros-lawl/images/7/77/Joe.png/revision/latest?cb=20190422095447"
+                    //    }
+                    //});
+                    //RetailEventUtils.Ticket(this, RetailEventUtils.GetDummyTicket());
+                    //AddItem("1", "2", "3", "4", 0, "5");
                     ClientLogger.Info("Handshake complete!");
                     _isHandShakeDone = true;
                     break;
@@ -221,7 +245,9 @@ namespace SonicServer
 
             byte[] buffer = Encoding.UTF8.GetBytes(payload.ToString());
             //ClientLogger.Debug(payload);
-            conn.Write(buffer, 0, buffer.Length);
+            conn.Socket.Send(buffer, 0, buffer.Length, SocketFlags.None, out SocketError err);
+            if (err != SocketError.Success)
+                ClientLogger.Error($"(Non-Fatal) Failed to send {buffer.Length} bytes with error {err.ToString()}");
         }
 
         public void SendJson(NetworkStream conn, string method, string? path, object? obj)
@@ -230,7 +256,7 @@ namespace SonicServer
                 { "Content-Type", "text/json" }
             };
             string? body = obj != null ? JsonConvert.SerializeObject(obj) : "{}";
-            ClientLogger.Debug(body);
+            //ClientLogger.Debug(body);
             headers["Content-Length"] = Encoding.UTF8.GetByteCount(body).ToString();
             Send(conn, method, path, headers, body);
         }
@@ -263,25 +289,40 @@ namespace SonicServer
             };
             SendJson(conn, "DATA", "", payload);
         }
+        public static double CalculateTax(double input, int taxPercent=12, int decimals=2) // provincial sales tax (7%) + some federal thing (5%) = 12% tax (for BC, Canada)
+        {
+            return Math.Round(input * (taxPercent / 100.0), decimals);
+        }
 
         public void AddItem(string itemId, string desc, string category, string price, int quantity, string imagePath)
         {
             int total;
             if (_existingItems.TryGetValue(itemId, out var item))
             {
-                // c# this is dumb as shit please fix it rn thx xx
-                item[4] = (int)item[4] + 1;
-
-
+                // c# this is dumb as shit please fix it rn thx xx // not anymore i made it actually use the correct type lmao
+                item.Quantity += 1;
+                _existingItems[itemId] = item; // whats that kids? thats right! thats fucking stupid!
+                ClientLogger.TestStyles("new quantity:", item.Quantity);
             }
             else
             {
                 _existingItems.Add(itemId,
-                    [desc, category, price, quantity, imagePath,]);
+                    new Entry()
+                    {
+                        Category = category,
+                        //ImagePath = imagePath,
+                        ItemId = itemId,
+                        MktgDescription = desc,
+                        ModifierList = new List<Modifier>(),
+                        Price = price,
+                        Quantity = quantity
+                    });// [desc, category, price, quantity, imagePath,]);
             }
 
+            //List<SubTicket> items = new List<Entry>();
+            //foreach(Entry entry in _existingItems.Values) {
 
-
+            float pricesum = _existingItems.Values.ToList().Sum(x => float.Parse(x.Price) * x.Quantity);
             var retailEventRequest = new RetailEventRequest
             {
                 Type = "RQST",
@@ -293,13 +334,13 @@ namespace SonicServer
                     Ticket = new Ticket
                     {
                         State = "ACTIVE",
-                        Total = "420.69",
-                        Tax = "13.37",
+                        Total = pricesum.ToString(),
+                        Tax = CalculateTax(pricesum).ToString(),
                         EmployeeFirstName = "Silly",
                         EmployeeLastName = "Billy",
                         SubTicketList = new List<SubTicket>{
                             new() {
-                                EntryList = new List<Entry>{
+                                EntryList = _existingItems.Values.ToList()/*new List<Entry>{
                                     new() {
                                         ItemId = "1002",
                                         MktgDescription = "COCK",
@@ -313,12 +354,14 @@ namespace SonicServer
                                             MktgDescription = "more cock"
                                         }}
                                     }
-                                }
+                                }*/
                             }
                         }
                     }
                 }
             };
+
+            RetailEvent(Stream, retailEventRequest.Verb, retailEventRequest.Resource, retailEventRequest.PayloadRetail);
         }
     }
 }

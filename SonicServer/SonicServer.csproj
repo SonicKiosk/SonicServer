@@ -1,22 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0-windows</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <PlatformTarget>AnyCPU</PlatformTarget>
-        <Platforms>AnyCPU;x64</Platforms>
-    </PropertyGroup>
+  <PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-      <PackageReference Include="Pastel" Version="5.1.0" />
-      <PackageReference Include="SuperSocket" Version="2.0.0-beta.24" />
-    </ItemGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Platforms>AnyCPU;x64</Platforms>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\ServerUIWinforms\ServerUI.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Pastel" Version="5.1.0" />
+    <PackageReference Include="SuperSocket" Version="2.0.0-beta.24" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="InfoEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
 
 </Project>

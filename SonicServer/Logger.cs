@@ -1,4 +1,5 @@
 ﻿using Pastel;
+using SuperSocket.ProtoBase;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -23,13 +24,32 @@ namespace SonicServer
         {
             return new string(' ', Math.Max(0, source.Length / 2 - target.Length / 2)) + target;
         }
+        private static string HalfSpaceTextInMiddleOfTextThatsSoUselessItsBasicallyAHardcodedMethod(string source, string target)
+        {
+            return new string(' ', (int) (Math.Max(0, source.Length / 2 - target.Length / 2) / 1.5)) + target;
+        }
+        private static string[] MultiLineSpaceString(string source, string target)
+        {
+            string[] lines = target.Split('\n');
+            string[] output = new string[lines.Length];
+            for (int i = 0; i < lines.Length; i++)
+            {
+               string line = lines[i];
+               output[i] = HalfSpaceTextInMiddleOfTextThatsSoUselessItsBasicallyAHardcodedMethod(FixedRepeat(source, source.Length), line);
+            }
+            return output;
+        }
 
-        public static void LogHeader(string headerCharacter, string text, Color headerColor, Color textColor, int padding)
+        public static void LogHeader(string headerCharacter, string text, Color headerColor, Color textColor, int padding, string disposable="*")
         {
             string header = FixedRepeat(headerCharacter, Console.WindowWidth).Pastel(headerColor);
             Console.WriteLine(header);
             PadConsole(padding);
-            Console.WriteLine(SpaceTextInMiddleOfText(header, text.Pastel(textColor)));
+            if (text.Split('\n').Length == 0)
+                Console.WriteLine(SpaceTextInMiddleOfText(header, text.Pastel(textColor)));
+            else
+                foreach (string line in MultiLineSpaceString(header, text.Pastel(textColor)))
+                    Console.WriteLine(line.Replace(disposable, " "));
             PadConsole(padding);
             Console.WriteLine(header);
 
