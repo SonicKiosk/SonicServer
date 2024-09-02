@@ -133,7 +133,7 @@ namespace SonicServer
                             }
                             catch
                             {
-                                ClientLogger.Error("Failed to parse SyncInfo. Some features may not work.");
+                                ClientLogger.Warn("Failed to parse SyncInfo. Some features may not work.");
                                 //Disconnect();
                             }
                                 //if (_isHandShakeDone)
