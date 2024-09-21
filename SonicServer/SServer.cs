@@ -138,8 +138,10 @@ namespace SonicServer
 *   \____/ \____/|______| |____/|_|  \_\/_/    \_\_| \_|\_____|_|  |_|  *
 ";
 
+        public static List<PricingEntry> Prices = new List<PricingEntry>();
         static void StartServer()
         {
+            //ServerLogger.TestStyles("hi");
             if (Console.WindowWidth < joeHeader.Split('\n').Max(line => line.Length))
                 Logger.LogHeader("_-", "Sonic C# Server.", Color.DodgerBlue, Color.DeepSkyBlue, 2);
             else
@@ -160,16 +162,25 @@ namespace SonicServer
 
             //string host = address.ToString(); //"192.168.1.109"; // localhost
             //! address = "192.168.1.109"
+
             ServerLogger.Info("Reading config from cfg.json");
             ServerLogger.Newline();
             settings = Config.ReadFromFile();
+            settings.SaveToFile();
 
+            if (settings.Developer == true)
+            {
+                ServerLogger.WarnDebug($"Developer mode is enabled. Debugging messages will be shown.");
+            }
 
             if (settings.DebugIP != null)
             {
-                ServerLogger.Debug($"IP override found. Using ip {settings.DebugIP} (\"DebugIP\")");
-
+                ServerLogger.Warn($"IP override found. Using ip {settings.DebugIP} (\"DebugIP\")");
             }
+
+            ServerLogger.Info($"Scraping prices from {PricingScraper.prices_provider.Pastel(Color.CornflowerBlue)}.");
+            Prices = PricingScraper.GetPrices();
+            ServerLogger.Info($"Scraped {Prices.Count.ToString().Pastel(Prices.Count > 0 ? Color.LightGreen : Color.IndianRed)}");
             //if (settings.DebugIP == null) // yucky cluttered block
             //{
             //    ServerLogger.Info("Host IP was null. Enter IP address:");
@@ -180,8 +191,13 @@ namespace SonicServer
             //}
 
             string host = settings.DebugIP ?? "0.0.0.0";
-            int port = 8005; // choose any available port
-                             // Create a TCP listener
+            int port = 8005;
+
+            if (settings.PortOverride != null)
+            {
+                ServerLogger.Warn($"Port override found. Using port {settings.PortOverride} (\"PortOverride\")");
+            }
+
             ServerLogger.Info($"Attempting to create server on {host}:{port}.");
             TcpListener? server = null;
             try

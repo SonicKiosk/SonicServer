@@ -14,12 +14,13 @@ namespace SonicServer
     {
         Logger ClientLogger;
         public CustomerInfo clientInfo;
+        public SyncInfo syncInfo;
         private const int ClientBufferSize = 2048; // doubled the size since packets can be large asl
-        private NetworkStream _stream;
+        private NetworkStream? _stream;
         private readonly TcpClient client;
         private bool _isHandShakeDone = false;
         public Guid id { get; private set; } = Guid.Empty;
-        private Dictionary<string, Entry> _existingItems = new Dictionary<string, Entry>();
+        public readonly Dictionary<string, Entry> ActiveTicket = new Dictionary<string, Entry>();
 
         public ClientHandler(TcpClient client)
         {
@@ -38,7 +39,7 @@ namespace SonicServer
 
             new Thread(CheckForDisconnect).Start();
         }
-        public NetworkStream Stream => _stream;
+        public NetworkStream? Stream => _stream;
         private bool _isDisconnecting = false;
         public void Disconnect()
         {
@@ -129,6 +130,7 @@ namespace SonicServer
                         if (decoded.ContainsKey("For") && decoded["For"]!.ToString() == "/sync/snapshot")
                             try
                             {
+                                syncInfo = JsonConvert.DeserializeObject<SyncInfo>(decoded["SyncInfo"]!.ToString());
                                 ClientLogger.Debug("syncinfo:", JsonConvert.SerializeObject(JsonConvert.DeserializeObject<SyncInfo>(decoded["SyncInfo"]!.ToString()).Software.CurrentConfig.App).ToString());
                             }
                             catch
@@ -296,17 +298,17 @@ namespace SonicServer
 
         public void AddItem(string itemId, string desc, string category, string price, int quantity, string imagePath)
         {
-            int total;
-            if (_existingItems.TryGetValue(itemId, out var item))
+            //int total = 0;
+            if (ActiveTicket.TryGetValue(itemId, out var item))
             {
                 // c# this is dumb as shit please fix it rn thx xx // not anymore i made it actually use the correct type lmao
                 item.Quantity += 1;
-                _existingItems[itemId] = item; // whats that kids? thats right! thats fucking stupid!
+                ActiveTicket[itemId] = item; // whats that kids? thats right! thats fucking stupid!
                 ClientLogger.TestStyles("new quantity:", item.Quantity);
             }
             else
             {
-                _existingItems.Add(itemId,
+                ActiveTicket.Add(itemId,
                     new Entry()
                     {
                         Category = category,
@@ -322,7 +324,7 @@ namespace SonicServer
             //List<SubTicket> items = new List<Entry>();
             //foreach(Entry entry in _existingItems.Values) {
 
-            float pricesum = _existingItems.Values.ToList().Sum(x => float.Parse(x.Price) * x.Quantity);
+            float pricesum = (float) Math.Round(ActiveTicket.Values.ToList().Sum(x => float.Parse(x.Price) * x.Quantity), 2);
             var retailEventRequest = new RetailEventRequest
             {
                 Type = "RQST",
@@ -340,7 +342,7 @@ namespace SonicServer
                         EmployeeLastName = "Billy",
                         SubTicketList = new List<SubTicket>{
                             new() {
-                                EntryList = _existingItems.Values.ToList()/*new List<Entry>{
+                                EntryList = ActiveTicket.Values.ToList()/*new List<Entry>{
                                     new() {
                                         ItemId = "1002",
                                         MktgDescription = "COCK",
@@ -360,7 +362,11 @@ namespace SonicServer
                     }
                 }
             };
-
+            if (Stream == null)
+            {
+                Disconnect();
+                return;
+            }
             RetailEvent(Stream, retailEventRequest.Verb, retailEventRequest.Resource, retailEventRequest.PayloadRetail);
         }
     }

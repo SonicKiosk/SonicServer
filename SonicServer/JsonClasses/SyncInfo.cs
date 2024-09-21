@@ -167,9 +167,9 @@ namespace SonicServer.JsonClasses
         }
 
 
-        public MarketingInfo Marketing { get; set; }
+        //public MarketingInfo? Marketing { get; set; }
         public SoftwareInfo Software { get; set; }
-        public object Streams { get; set; }
+        //public object Streams { get; set; }
     }
 
 }

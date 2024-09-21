@@ -118,6 +118,7 @@ namespace ServerUI
             mainContent.SelectedIndex = 0;
             mainContent.Size = new Size(590, 359);
             mainContent.TabIndex = 2;
+            mainContent.DrawItem += mainContent_DrawItem;
             mainContent.SelectedIndexChanged += mainContent_SelectedIndexChanged;
             // 
             // basicSection

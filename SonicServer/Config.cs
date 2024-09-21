@@ -6,6 +6,14 @@ namespace SonicServer
     {
         public string? DebugIP;
         public int? PortOverride;
+        [JsonIgnore]
+        public bool Developer = true;
+
+        [JsonIgnore]
+        public Theme? _Override_Theme = null;
+
+        public string SelectedTheme = "DefaultDark";
+        public Dictionary<string, Theme> CustomThemes = new Dictionary<string, Theme>();
 
 
         public void SaveToFile(string filename = "cfg")
