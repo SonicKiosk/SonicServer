@@ -4,10 +4,8 @@ wip server emulations system for Sonic Kisoks
 
 ## Build
 
-need dotnet 8
-
-in Program.cs change the ip to the ip you want (localhost or 127.0.0.1 usually)
+needs dotnet
 
 build and run 
 
-when it connects to the sonic kiosk after 20 seconds it will add 69 cocks to till and log you in as a user
+go to C:\Sonic\conf and there is a config file in there and an ip set that to the ip of your system that is running sonicserver (if its the same system use 127.0.0.1 )
